@@ -1,0 +1,40 @@
+---
+title: "Lab_14"
+author: "Kenya Sanchez"
+format: pdf
+editor: visual
+---
+
+## **Connecting R Studio to Git Hub**
+
+### **Create a Personal Access Token (PAT) on GitHub**
+
+```{r}
+# Personal Access Token Url
+install.packages("usethis")
+library(usethis)
+create_github_token()
+```
+
+### **Store Personal Access Token to Connect RStudio and GitHub**
+
+```{r}
+# Install Git Creds
+install.packages("gitcreds")
+library(gitcreds)
+gitcreds_set()
+```
+
+## **Create a GitHub repository**
+
+Creating Repositroy on Web Page
+
+Repository Name: BIMM_143
+
+## **Clone your repository using RStudio**
+
+### **Copy the repo address**
+
+code: https://github.com/k8sanchez628/BIMM143.git
+
+Use code above to create new project

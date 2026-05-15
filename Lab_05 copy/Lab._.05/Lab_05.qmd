@@ -1,0 +1,344 @@
+---
+title: "Lab_05"
+author: Kenya Sanchez
+format: pdf
+editor: visual
+---
+
+# Lab 05 - April 13th, 2026
+
+## Data Exploration and Visualization in R
+
+### A17755772 k8sanchez\@ucsd.edu
+
+Notes: **stuff in bold** is added by using two asterisks on each side of text *something italic* is added by using one asterisk on each side of text. Indents are added into format by using the greater than sign
+
+> Indent Text
+
+**Sections 1-5 Below were done together as a class**
+
+**Example of how to format questions and answers** \> **Q1: Make a ggplot plot**
+
+> **Answer Q1: falsdfhjkasjd**
+
+```{r}
+# Example on how to make a vector and add one to every number in vector x
+
+x <- 1:5
+x+1
+```
+
+**Let's Make a graph** library(ggplot2) only has to be called out once. (cars) referes to the dataset were working with, aes() helps label things such as x and y axis, and geom_point() is the function used to plot the points on the graph itself.
+
+```{r}
+# Call out ggplot2 so that we can load this package onto R
+
+library(ggplot2)
+
+# Use the cars data frame and functions like aes() and geom_point() to 
+# successfully label and generate a scatter plot of our data set. 
+
+ggplot(cars) +
+  aes(x=speed, y=dist) + 
+  geom_point(col="BLUE")
+```
+
+**Example of more modifications and changes made to the appearance of the graph**
+
+```{r}
+# Practice adding modifications and changes to the appearanch of our graphs. 
+# Modify theme for clarity, add labeles to make chart easier to understand. 
+
+ggplot(mpg) +
+  aes(x=displ, y=hwy, col=class) + 
+  geom_point()+ 
+  theme_classic()+ 
+  labs(title="Cars", subtitle="hwy mileage", caption="mydata", x="Displacement", y="Mileage") +
+  facet_wrap(~cyl)
+```
+
+**Start of Section 6: Creating Scatter Plots**
+
+We begin by mapping speed and distance variables taken from the cars dataset as shown below.
+
+```{r}
+# Map the data set "cars" and display it in a scatter plot
+
+ggplot(cars) + 
+  aes(x=speed, y=dist) + 
+  geom_point()
+```
+
+**Question 1:** Which geometric layer should be used to create scatter plots in ggplot2?
+
+> **Answer Q1:** In ggplot 2, geom_point() is the geometric layer used to create scatter plots like the one shown above. The full r code that accounts for this plot is show above.
+
+**Question 2:** In your own RStudio can you add a trend line layer to help show the relationship between the plot variables with the geom_smooth() function?
+
+> **Answer Q2** Yes, a trend line layer can be added to the ggplot by introducing it into the code as geom_smooth(). This will generate a thin line that follows the trend of the plots which allows us to better visualize the positive association/relationship between speed and distance. The code for the addition of this trendline is shown below.
+
+```{r}
+# Add the geom_smooth() function to add a trendline 
+
+ggplot(cars) + 
+  aes(x=speed, y=dist) + 
+  geom_point() + 
+  geom_smooth()
+```
+
+**Question 3:** Argue with geom_smooth() to add a straight line from a linear model without the shaded standard error region.
+
+> **Answer Q3:** In order to add a straight line without the shaded standard error region we must incorporate a new function to our geom_smooth() code. By adding method="lm" into our code we make the trend line linear and by adding se=FALSE we remove the standard error region from the plotted trend line. Together, these codes are added into geom_smooth(method="lm", se=FALSE) to generate the straight linear model without the shaded standard error region shown below.
+
+```{r}
+# Add modifications in the geom_smooth() function to change the appearance of the trendline.
+# Chaning method to lm makes the line of best fit linear and making se=FALSE 
+# allows us to remove the grey standard error of the trendline. 
+
+ggplot(cars) + 
+  aes(x=speed, y=dist) + 
+  geom_point() +
+  geom_smooth(method="lm", se=FALSE)
+```
+
+**Question 4:** Can you finish this plot by adding various label annotations with the labs() function and the plot look to a more conservative "black & white" theme by adding the theme_bw() function?
+
+> **Answer Q4:** By using the labs() function labels such as the graph title and x and y axis titles can be incorporated onto our graph. Adding these labels makes out graph easier to follow, interpret, and analyze. By adding the theme_bw() function, our graph is changed to a black and white theme making our graph "cleaner" and more conservative by avoiding background noise in colors. The finished plot and its corresponding r code are shown below.
+
+```{r}
+# Use the labs() function to annotate the display of out plot. Adding labels.
+
+ggplot(cars) + 
+  aes(x=speed, y=dist) + 
+  geom_point() +
+  geom_smooth(method="lm", se=FALSE) + 
+  labs(title="Speed and Stopping Distances of Cars",
+       x="Speed (MPH)", 
+       y="Stopping Distance (ft)",
+       subtitle = "Positive Association of: MPH vs. ft",
+       caption="Dataset: 'Cars'") +
+  theme_bw()
+```
+
+**Example Data Set of Gene Table**
+
+```{r}
+# This set is included to acces a new dataset to help answer the 
+# following questions. 
+
+url <- "https://bioboot.github.io/bimm143_S20/class-material/up_down_expression.txt"
+genes <- read.delim(url)
+head(genes)
+```
+
+**Question 5:** Use the nrow() function to find out how any genes are in the data set. What is your answer?
+
+> **Answer Q5:** There are a total of 5,196 genes in the data set above. The r code used to find this calculation is shwon below.
+
+```{r}
+nrow(genes)
+```
+
+**Question 6:** Use the colnames() fucntion and the ncol() function on the genes data frame to find out what the column names are (we will find these later) and how many columns there are. How many columns did you find?
+
+> **Answer Q6:** There are a total of 4 columns in the genes data set. The names of these 4 columns are: "Gene", "Condition 1", "Condition 2", and "State". The r code used to find this information is shown below.
+
+```{r}
+#Practice manipulating functions to display only the information we need from 
+# our data frame. In this case we only called out the column names and not the
+#components of each column as these do not matter at the moment. 
+
+colnames(genes)
+ncol(genes)
+```
+
+**Question 7:** Use the table() function on the "State" column of this data.frame to find out how many "up" regulated genes there are. What is your answer?
+
+> **Answer Q7:** There are a total of 127 up-regulated genes in this data.frame. The r code used to find this calculation is: table(genes\$State). We use genes to show that this we are searching in the genes data set, then we use \$State to call out the State column only.
+
+```{r}
+# Use $ to call out a single section of the data set, in this case only
+# factor information from the State Column 
+
+table(genes$State)
+```
+
+**Question 8:** Using your values above and 2 significant figures. What *percent* of total genes is up-regulated in this dataset?
+
+> **Answer Q8:** The percent of the of total genes that are up-regulated in this data set is: 2.44%. We take the total number of up-regulated genes then divide it by the total number of genes and then multiply this number to get the percentage: (127/5,196)x100. The r code for this calculation is shown below.
+
+```{r}
+# Use round(...,2) to round the valyes in our argument to 2 significant 
+# figures. Our argument is the calculation shown below. 
+
+round(table(genes$State)/nrow(genes) * 100, 2 ) [3]
+```
+
+**First Basic Scatter plot of this Dataset**
+
+**Question 9:** Complete the code below to produce the following plot: ggplot(***) + aes(x=Condition1, y=***) + \_\_\_
+
+> **Answer Q9:** The completed version of the code is shown in the r code bewlow. In this plot we are comparing Condition 1 and Condition 2, resulting in a positive association.
+
+```{r}
+# More practice on generating scatter plots
+
+ggplot(genes) + 
+    aes(x=Condition1, y=Condition2) +
+    geom_point()
+```
+
+**Map of State Column to point color**
+
+```{r}
+# Make this plot a vector to make it easier to access when making 
+# modifications in the future.  Add a color scale based on the State Column 
+
+p <- ggplot(genes) + 
+    aes(x=Condition1, y=Condition2, col=State) +
+    geom_point()
+p
+```
+
+**Explicitly Specified Color Scale**
+
+```{r}
+# Use scale color to adjust the color of our graph and make its visuals 
+# centered on the most important results (Down and Up regulated genes)
+
+p + scale_colour_manual( values=c("blue","gray","red") )
+```
+
+**Question 10:** Nice, now add some plot annotations to the p object with the labs() function so your plot looks like the following: *We were shown a properly labeled axis and graph title*
+
+> **Answer Q10:** To add the Graph title and x and y axis title we much add the following function to our previous specified color scale code: + labs(titel="Gene Expression Changes Upon Drug Treatment"", x="Control(no drug)", y="Drug Treatment")
+
+```{r}
+# Practice adding labels to make our graph match up with the one 
+# shown in our manual. Use the names provided for every label 
+
+p + scale_colour_manual(values=c("blue","gray","red")) +
+    labs(title="Gene Expresion Changes Upon Drug Treatment",
+         x="Control (no drug) ",
+         y="Drug Treatment")
+```
+
+
+**EXTRA CREDIT PORTION**
+**Start of Section 7: Going Further** 
+
+**Downloads Required to move onto Section 7**
+
+```{r}
+# File location online
+# Access to gapminder dataset
+url <- "https://raw.githubusercontent.com/jennybc/gapminder/master/inst/extdata/gapminder.tsv"
+gapminder <- read.delim(url)
+
+## Install dplyr in Console: install.packages("dplyr")
+# install.packages("dplyr")  ## un-comment to install if needed
+
+library(dplyr)
+
+gapminder_2007 <- gapminder %>% filter(year==2007)
+```
+
+**Question 1:** Complete the code below to produce a first basic scater plot of this gapminder_2007 dataset:ggplot(gapminder_2007) +
+  aes(x=___, y=___) +
+  ___
+
+>**Answer Q1:** The code above lacks variables for its x and y axis, it also lacks the command to plot the dataset as a scatter plit. In order to fix this we need to assign components to x and y (as shown below). We also have to add the geom_point() function so that we succesffuly plot our data. 
+
+```{r}
+#Create a scatter plot by finishing the code for the template provided above
+
+ggplot(gapminder_2007) +
+  aes(x=gdpPercap, y=lifeExp) +
+  geom_point()
+```
+**Modify Points on Scatter Plot** 
+
+```{r}
+# Adjust points and make them slighlty transparent 
+# Helps view overlapping plots 
+
+ggplot(gapminder_2007) +
+  aes(x=gdpPercap, y=lifeExp) +
+  geom_point(alpha=0.5)
+```
+
+**Adding more variables to aes()** 
+Organize visual representation of Plot 
+
+```{r}
+# Add 4 different variables into aesthetics that generate a richer plot
+
+ggplot(gapminder_2007) +
+  aes(x=gdpPercap, y=lifeExp, color=continent, size=pop) +
+  geom_point(alpha=0.5)
+```
+**Contrast Representation of Categorical Data (shown above) vs Numerical Data (shown below)**
+
+```{r}
+# Only use numerical variable of population for plot visuals 
+
+ggplot(gapminder_2007) + 
+  aes(x = gdpPercap, y = lifeExp, color = pop) +
+  geom_point(alpha=0.8)
+```
+
+**Adjusting Point Size** 
+
+```{r}
+# Make the size of the points represent the size of population 
+
+ggplot(gapminder_2007) + 
+  aes(x = gdpPercap, y = lifeExp, size = pop) +
+  geom_point(alpha=0.5)
+```
+
+**Adding Scales**
+
+```{r}
+# Add proportionality to representation of points by pop. size
+
+ggplot(gapminder_2007) + 
+  geom_point(aes(x = gdpPercap, y = lifeExp,
+                 size = pop), alpha=0.5) + 
+  scale_size_area(max_size = 10)
+```
+
+**Question 2:** Can you adapt the code you have learned thus far to reproduce our gapminder scatter plot for the year 1957? What do you notice about this plot is it easy to compare with the one for 2007?
+
+>**Answer Q2:** Yes, we can reproduce out gapminder scatter plot for the year 1957 rather than 2007 by making a vector that filters out responses from year==1957 only. Complete code is shown below. The general positive relationship between gdpPercap and lifeExp is visible in both the 1957 plot and the 2007 plot. These plots are very different from each othe rin the sense that they are scaled differently (on axis) and the population scales also vary between the two. 
+
+```{r}
+gapminder_1957 <- gapminder %>% filter(year==1957)
+
+ggplot(gapminder_1957) + 
+  aes(x = gdpPercap, y = lifeExp, color=continent,
+                 size = pop) +
+  geom_point(alpha=0.7) + 
+  scale_size_area(max_size = 10) 
+```
+
+**Question 3:** Do the same steps above but include 1957 and 2007 in your input dataset for ggplot(). You should now include the layer facet_wrap(~year) to produce the following plot:
+
+>**Answer Q3:** This allows for both plots to be shown size by sized and scaled with the same factors. Overall, this allows for a clear comaprison between the two as population plots are scaled equally and the axis are also scaled by the same values. 
+
+```{r}
+# Make a vector for data from btoh 1957 and 2007 
+
+gapminder_19572007 <- gapminder %>% filter(year==1957 | year==2007)
+
+# Plot this new vector as a Scatter Plot 
+
+ggplot(gapminder_19572007) + 
+  geom_point(aes(x = gdpPercap, y = lifeExp, color=continent,
+                 size = pop), alpha=0.7) + 
+  scale_size_area(max_size = 10) +
+  facet_wrap(~year)
+```
+
+
+**Start of Section 8: Optional: Bar Charts** 

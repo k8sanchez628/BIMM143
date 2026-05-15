@@ -1,0 +1,431 @@
+---
+title: "Lab_12"
+author: "Kenya Sanchez"
+format: pdf
+editor: visual
+---
+
+## **Section 2: Bioconductor setup**
+
+Confirm that BiocManager and DESeq2 have installed correctly
+
+```{r}
+library(BiocManager)
+library(DESeq2)
+```
+
+## **Section 3: Import countData and colData**
+
+Download airway scaled counts and airway metdata into directory
+
+```{r}
+# Vectors and code to download files into directory 
+counts <- read.csv("airway_scaledcounts.csv", row.names=1)
+metadata <-  read.csv("airway_metadata.csv")
+```
+
+Take a look at the head of each
+
+```{r}
+# View head of counts file 
+head(counts)
+
+```
+
+```{r}
+# View head of metada file 
+head(metadata)
+```
+
+**Question 1: How many genes are in this dataset?**
+
+> **Answer Q1:** There are **83,694** genes in this dataset. nrow() counts the number of rows, which in this case are associated with \# of genes. Calculation shown below.
+
+```{r}
+# Use nrow to find total number of genes
+nrow(counts)
+```
+
+**Question 2: How many ‘control’ cell lines do we have?**
+
+> **Answer Q2:** There are **4 'control'** cell lines. Before finding this code, I simply called out the head(metadata) function and I simply counted each row that said 'control' in the dex column. The 4 control samples are SRR1039508, SRR1039512, SRR1039516, and SRR1039520.
+
+```{r}
+# Count "control" cells through head of metadata
+head(metadata)
+
+# Code that gives the numerical value for the total number of "control" cells
+sum(metadata$dex == "control")
+```
+
+## **Section 4: Toy differential gene expression**
+
+Calculate the mean counts per gene across the control samples
+
+```{r}
+# Calculate mean counts
+control <- metadata[metadata[,"dex"]=="control",]
+control.counts <- counts[ ,control$id]
+control.mean <- rowSums( control.counts )/4 
+head(control.mean)
+```
+
+Alternative Method using dplyr
+
+```{r}
+library(dplyr)
+control <- metadata %>% filter(dex=="control")
+control.counts <- counts %>% select(control$id) 
+control.mean <- rowSums(control.counts)/4
+head(control.mean)
+```
+
+**Question 3: How would you make the above code in either approach more robust? Is there a function that could help here?**
+
+> **Answer Q3:** For either approach, the codes can be written in a more robust way by using the rowMeans() function instead of using rowSums()and then dividing by 4. By swapping the rowSums() function with the rowMenas() function we get a more robust and stable code that provides the same results.
+
+```{r}
+contol <- metadata[metadata[,"dex"]=="control",]
+control.mean <- rowMeans( counts[ ,control$id] ) 
+head(control.mean)
+```
+
+**Q4: Follow the same procedure for the treated samples (i.e. calculate the mean per gene across drug treated samples and assign to a labeled vector called treated.mean)**
+
+> **Answer Q4:** The R code belos is used to calculate the mean per gene (counts) across treated samples.
+
+```{r}
+treated <- metadata[metadata[,"dex"]=="treated",]
+treated.mean <- rowMeans( counts[ ,treated$id] ) 
+head(treated.mean)
+```
+
+Combine meancount data for bookkeeping purposes
+
+```{r}
+# Combine control and treated means 
+meancounts <- data.frame(control.mean, treated.mean)
+```
+
+Sum of the mean counts across all genes for each group
+
+```{r}
+# Use colSums() funciton for mean across individual groups 
+colSums(meancounts)
+```
+
+**Q5 (a): Create a scatter plot showing the mean of the treated samples against the mean of the control samples. Your plot should look something like the following.**
+
+> **Answer Q5a:** R code for the scatter plot that shows the mean of treated samples against the mean of the contorl samples is shown below.
+
+```{r}
+# Scatter plot showing mean of treated vs mean of control samples 
+plot(meancounts[,1],meancounts[,2], xlab="Control", ylab="Treated")
+```
+
+**Q5 (b): You could also use the ggplot2 package to make this figure producing the plot below. What geom\_?() function would you use for this plot?**
+
+> **Answer Q5b:** The geom\_\_() function used for this plot would be **geom_point()**. R code for plot using ggplot2 is shown below.
+
+```{r}
+# Same Scatter Plot but with ggplot2
+library(ggplot2)
+
+ggplot(meancounts, aes(x = control.mean, y = treated.mean)) +
+  geom_point(alpha=0.5) +
+  labs(x = "Control", y = "Treated")
+```
+
+**Q6: Try plotting both axes on a log scale. What is the argument to plot() that allows you to do this?**
+
+> **Answer Q6:** In order to plot both aces on a log scale we have to use the argument log=xy as shown in the code below.
+
+```{r}
+# Add log feature to include all data. 
+plot(meancounts$control.mean, meancounts$treated.mean, 
+     log = "xy", 
+     xlab = "Control", 
+     ylab = "Treated")
+```
+
+Find genes with a large change between control and dex-treated samples
+
+```{r}
+# Resultswith large changes 
+meancounts$log2fc <- log2(meancounts[,"treated.mean"]/meancounts[,"control.mean"])
+head(meancounts)
+```
+
+> *Note: “weird” results; the NaN (“not a number”) and -Inf (negative infinity) results. The NaN is returned when you divide by zero and try to take the log. The -Inf is returned when you try to take the log of zero.*
+
+Filter data to remove genes with zero expression
+
+```{r}
+# Removing NaN and -Inf
+zero.vals <- which(meancounts[,1:2]==0, arr.ind=TRUE)
+
+to.rm <- unique(zero.vals[,1])
+mycounts <- meancounts[-to.rm,]
+head(mycounts)
+```
+
+**Q7: What is the purpose of the arr.ind argument in the which() function call above? Why would we then take the first column of the output and need to call the unique() function?**
+
+> **Answer Q7:** The purpose of the arr.ind argument in the which() function above is to show which genes (rows) and samples (columns) have zero counts. We do this because we are trying to remove the genes with zero gene expression. By settign arr.ind = TRUE and then using zero.vals\[,1\] we can proceed to ignore any genes that have zero counts in any sample so we just focus on the row answer. In other words we take the first column of the output to screen for the the row indices where a zero was found. We call the unique() function to nsure we don’t count any row twice if it has zero entries in both samples.
+
+Threshold used for calling something differentially expressed: log2(FoldChange) of greater than 2 or less than -2
+
+```{r}
+# how many genes are up or down-regulated:
+
+up.ind <- mycounts$log2fc > 2
+down.ind <- mycounts$log2fc < (-2)
+```
+
+**Q8: Using the up.ind vector above can you determine how many up regulated genes we have at the greater than 2 fc level?**
+
+> **Answer Q8:** There are a total of **250 up regulated** genes that exceed the 2 fc threshold.
+
+```{r}
+sum(up.ind)
+```
+
+**Q9: Using the down.ind vector above can you determine how many down regulated genes we have at the greater than 2 fc level?**
+
+> **Answer Q9:** There are a total of **367 down regulated** genes at the greater than 2 fc level.
+
+```{r}
+sum(down.ind)
+```
+
+**Q10: Do you trust these results? Why or why not?**
+
+> **Answer Q10:** No, we can not trust these results as we have no proof of their statistical significace. Another test like a p-value would need to be run in order to determine if these results actually mean anything in terms of them being statistically significant. Without a p-value we can not trust these results.
+
+## **Section 5: Setting up for DESeq**
+
+Load DESeq2
+
+```{r}
+library(DESeq2)
+citation("DESeq2")
+```
+
+### **Importing data**
+
+Use DESeqDataSetFromMatrix() function to build the required DESeqDataSet object
+
+```{r}
+# Building DESeq object 
+dds <- DESeqDataSetFromMatrix(countData=counts, 
+                              colData=metadata, 
+                              design=~dex)
+dds
+```
+
+## **Section 6: Principal Component Analysis (PCA)**
+
+Analyze how the count samples are related to one another using PCA
+
+```{r}
+# PCA plot 
+vsd <- vst(dds, blind = FALSE)
+plotPCA(vsd, intgroup = c("dex"))
+```
+
+Building PCA plot from scratch using ggplot2
+
+```{r}
+# Ask for plotting data not the plot itself
+pcaData <- plotPCA(vsd, intgroup=c("dex"), returnData=TRUE)
+head(pcaData)
+```
+
+Percent variance (St.Dev) per PC
+
+```{r}
+# Calculate percent variance per PC for the plot axis labels
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+```
+
+Scatterplot plotted by ggplot2
+
+```{r}
+# Scatterplot using ggplot2 
+ggplot(pcaData) +
+  aes(x = PC1, y = PC2, color = dex) +
+  geom_point(size =3) +
+  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
+  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
+  coord_fixed() +
+  theme_bw()
+```
+
+## **Section 7: DESeq analysis**
+
+Run the DESeq analysis
+
+```{r}
+# results(dds)
+# Error in results(dds): couldn't find results. you should first run DESeq()
+```
+
+Assign data a DESeq2 format
+
+```{r}
+# DESeq format needs to be used!
+dds <- DESeq(dds)
+```
+
+### **Getting results**
+
+```{r}
+# Results from DESeqDataSet
+res <- results(dds)
+res
+```
+
+Convert the res object to a data.frame with the as.data.frame() function and then pass it to View() to bring it up in a data viewer
+
+```{r}
+# Summarize Results 
+summary(res)
+```
+
+P-Value
+
+```{r}
+# Summarize Results with a given p-value
+res05 <- results(dds, alpha=0.05)
+summary(res05)
+```
+
+## **Section 8: Adding annotation data**
+
+Load the AnnotationDbi package and the annotation data package for humans org.Hs.eg.db.
+
+```{r}
+# Load Packages
+library("AnnotationDbi")
+library("org.Hs.eg.db")
+```
+
+Use columns() to obtain a list of all available key types
+
+```{r}
+# View key types 
+columns(org.Hs.eg.db)
+```
+
+Use the mapIds() function to add individual columns to our results table
+
+```{r}
+res$symbol <- mapIds(org.Hs.eg.db,
+                     keys=row.names(res), # Our genenames
+                     keytype="ENSEMBL",        # The format of our genenames
+                     column="SYMBOL",          # The new format we want to add
+                     multiVals="first")
+```
+
+```{r}
+#Read res vector 
+head(res)
+```
+
+**Q11: Run the mapIds() function two more times to add the Entrez ID and UniProt accession and GENENAME as new columns called res**$entrez, res$uniprot and res\$genename
+
+> **Answer Q11:** Below is the R code used to add the entrez, uniprot, and genename as new columns.
+
+```{r}
+# Codes used to add new columns: entrez, uniprot, and genename
+res$entrez <- mapIds(org.Hs.eg.db,
+                     keys=row.names(res),
+                     column="ENTREZID",
+                     keytype="ENSEMBL",
+                     multiVals="first")
+
+res$uniprot <- mapIds(org.Hs.eg.db,
+                     keys=row.names(res),
+                     column="UNIPROT",
+                     keytype="ENSEMBL",
+                     multiVals="first")
+
+res$genename <- mapIds(org.Hs.eg.db,
+                     keys=row.names(res),
+                     column="GENENAME",
+                     keytype="ENSEMBL",
+                     multiVals="first")
+
+head(res)
+```
+
+Order Results based on P-value
+
+```{r}
+ord <- order( res$padj )
+#View(res[ord,])
+head(res[ord,])
+```
+
+Ordered significant results with annotations
+
+```{r}
+write.csv(res[ord,], "deseq_results.csv")
+```
+
+## **Section 9: Data Visualization**
+
+### Volcano Plots
+
+> Volcano plots are frequently used to highlight the proportion of genes that are both significantly regulated and display a high fold change
+
+```{r}
+# Basic Volcano Plot 
+plot( res$log2FoldChange,  -log(res$padj), 
+      xlab="Log2(FoldChange)",
+      ylab="-Log(P-value)")
+```
+
+Add cutoff lines highlighting genes that have padj\<0.05 and the absolute log2FoldChange\>2
+
+```{r}
+plot( res$log2FoldChange,  -log(res$padj), 
+ ylab="-Log(P-value)", xlab="Log2(FoldChange)")
+
+# Add some cut-off lines
+abline(v=c(-2,2), col="darkgray", lty=2)
+abline(h=-log(0.05), col="darkgray", lty=2)
+```
+
+Adding color
+
+```{r}
+# Setup our custom point color vector 
+mycols <- rep("gray", nrow(res))
+mycols[ abs(res$log2FoldChange) > 2 ]  <- "red" 
+
+inds <- (res$padj < 0.01) & (abs(res$log2FoldChange) > 2 )
+mycols[ inds ] <- "blue"
+
+# Volcano plot with custom colors 
+plot( res$log2FoldChange,  -log(res$padj), 
+ col=mycols, ylab="-Log(P-value)", xlab="Log2(FoldChange)" )
+
+# Cut-off lines
+abline(v=c(-2,2), col="gray", lty=2)
+abline(h=-log(0.1), col="gray", lty=2)
+```
+
+Using Enhanced Volcano bioconductor package
+
+```{r}
+# Load and Plot using Enchanced package 
+library(EnhancedVolcano)
+
+x <- as.data.frame(res)
+
+EnhancedVolcano(x,
+    lab = x$symbol,
+    x = 'log2FoldChange',
+    y = 'pvalue')
+```
